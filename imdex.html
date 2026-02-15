@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sojib Ultra Extreme Calc</title>
+    <style>
+        /* স্ক্রিন লক করার জন্য */
+        * { box-sizing: border-box; touch-action: none; -webkit-tap-highlight-color: transparent; }
+        
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background: #000;
+            display: flex; justify-content: center; align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* Matrix Background */
+        #canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+
+        .main-wrapper {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            width: 92%; max-width: 340px; z-index: 10;
+        }
+
+        /* নির্দেশিকা বক্স */
+        .instruction-box {
+            background: rgba(255, 0, 0, 0.1); border: 2px solid #f00;
+            color: #f00; padding: 10px; margin-bottom: 12px; border-radius: 12px;
+            width: 100%; font-size: 11px; text-align: center;
+            box-shadow: 0 0 15px #f007; font-weight: bold;
+        }
+
+        .branding { text-align: center; margin-bottom: 8px; }
+        .branding h1 { color: #fff; margin: 0; font-size: 20px; text-shadow: 0 0 10px #0f0; letter-spacing: 2px; }
+        .branding p { color: #ff0050; margin: 2px 0; font-weight: bold; font-size: 13px; text-transform: uppercase; }
+
+        /* ক্যালকুলেটর মেইন বডি */
+        .calculator {
+            width: 100%; background: rgba(5, 5, 5, 0.98); padding: 15px;
+            border-radius: 20px; border: 2.5px solid #0f0; box-shadow: 0 0 35px #0f05;
+            transition: 0.3s;
+        }
+
+        .display {
+            background: #000; color: #0f0; padding: 15px; font-size: 16px;
+            border-radius: 10px; text-align: right; margin-bottom: 15px;
+            border: 1px solid #0f0; min-height: 55px;
+            display: flex; align-items: center; justify-content: flex-end;
+            word-break: break-all;
+        }
+
+        .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+        button {
+            padding: 14px 0; font-size: 20px; border: 1px solid #0f0;
+            border-radius: 10px; background: #000; color: #0f0;
+            font-weight: bold; cursor: pointer;
+        }
+
+        button:active { background: #0f0; color: #000; }
+        .equal { background: #0f0; color: #000; }
+        .del { background: #ff9800; color: #000; border: none; }
+        .clear { background: #f44336; color: #fff; border: none; grid-column: span 4; margin-top: 5px; font-size: 16px; }
+
+        /* গালি আসলে লাল ঝিলিক দেবে */
+        .danger-alert { border-color: #f00 !important; box-shadow: 0 0 60px #f00 !important; }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="main-wrapper">
+    <div class="instruction-box">
+        💀 সজীবের ডেঞ্জার কী-ওয়ার্ড 💀<br>
+        1+2 | 1+6 | 1+45 | 1+100 | 2+0 | 5+5 | 8+8 | 0+1
+    </div>
+
+    <div class="branding">
+        <h1>MADE BY SOJIB</h1>
+        <p>TikTok: SOJIB_MUSIC</p>
+    </div>
+
+    <div class="calculator" id="calc">
+        <div class="display" id="display">হ্যাক করার জন্য রেডি_</div>
+        <div class="buttons">
+            <button onclick="press('7')">7</button><button onclick="press('8')">8</button><button onclick="press('9')">9</button><button class="del" onclick="backspace()">❌</button>
+            <button onclick="press('4')">4</button><button onclick="press('5')">5</button><button onclick="press('6')">6</button><button onclick="press('*')">×</button>
+            <button onclick="press('1')">1</button><button onclick="press('2')">2</button><button onclick="press('3')">3</button><button onclick="press('/')">÷</button>
+            <button onclick="press('0')">0</button><button onclick="press('+')">+</button><button onclick="press('-')">-</button><button class="equal" onclick="calculate()">=</button>
+            <button class="clear" onclick="clearAll()">সব মুছুন (CLR)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let input = "";
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playDeepDarkSound() {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(40, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2.5);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 2.5);
+    }
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resize(); window.onresize = resize;
+    const drops = Array(Math.floor(window.innerWidth/16)).fill(1);
+    function draw() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0F0";
+        drops.forEach((y, i) => {
+            ctx.fillText(Math.floor(Math.random()*2), i*16, y*16);
+            if(y*16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+        });
+    }
+    setInterval(draw, 50);
+
+    function press(v) { 
+        initAudio(); 
+        if(document.getElementById("display").innerText.includes("রেডি")) input=""; 
+        input += v; update(); 
+    }
+    function backspace() { input = input.slice(0,-1); update(); }
+    function clearAll() { input = ""; update(); }
+    function update() { document.getElementById("display").innerText = input || "0"; }
+
+    function calculate() {
+        let res = "";
+        const currentInput = input;
+        
+        // সব কড়া গালি এক জায়গায়
+        if (currentInput === "1+2") res = "তোর বউয়ের দুধ কিন্তু সেই বড় বড় 🍒";
+        else if (currentInput === "1+6") res = "সোজিব তোর আব্বু লাগে 👑";
+        else if (currentInput === "1+45") res = "তোর গার্লফ্রেন্ডের চুদানি খাইয়া শান্তি নাই 👅";
+        else if (currentInput === "1+100") res = "তোর চৌদ্দ গুষ্টিরে এক লাইনে খাড়া করাইয়া চুদি 🐕";
+        else if (currentInput === "2+0") res = "তোর মারে ল্যাংটা কইরা নাচামু শালার পুত 💃";
+        else if (currentInput === "5+5") res = "তোর বোনের ভোদায় কি মরিচ ঘইষা দিমু? 🌶️";
+        else if (currentInput === "8+8") res = "খানকির পোলা গালি কি তোর বাপে দেয়? 🤡";
+        else if (currentInput === "0+1") res = "তুই তো একটা আস্ত মাগীবাজ কুত্তার বাচ্চা 🐕";
+        else if (currentInput === "3+3") res = "তোর বিচি টাইনা ছিইড়া ফেলামু মাদারচোদ 🔪";
+        else if (currentInput === "7+7") res = "তোর পাছায় বাশ দিমু শালা হিজড়া 🎋";
+        else if (currentInput === "6+9") res = "তোর গার্লফ্রেন্ডরে নিয়া হোটেলে চুদমু 🏨";
+        else if (currentInput === "4+4") res = "তোর গুষ্ঠির ভাত মারি শয়তানের বাচ্চা 🍚";
+        else if (currentInput === "1+1") res = "তোর কলিজায় কি বিষ নাই মাদারচোদ? 🐍";
+        else if (currentInput === "9+9") res = "তোর বাপে আমার জুতা পালিশ করে 👞";
+        else {
+            try { res = eval(currentInput); } catch { res = "ভুল লিখছিস রে আবাল!"; }
+        }
+
+        const isGali = /দুধ|আব্বু|চুদানি|চুদি|ল্যাংটা|ভোদায়|খানকি|মাগীবাজ|বিচি|পাছায়|চুদমু|গুষ্ঠির|মাদারচোদ|জুতা/.test(res);
+        if (isGali) {
+            playDeepDarkSound();
+            document.getElementById('calc').classList.add('danger-alert');
+            if(navigator.vibrate) navigator.vibrate(2000);
+            setTimeout(() => document.getElementById('calc').classList.remove('danger-alert'), 3000);
+        }
+        document.getElementById("display").innerText = res;
+        input = "";
+    }
+</script>
+</body>
+</html>
